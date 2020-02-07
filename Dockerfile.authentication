@@ -1,15 +1,32 @@
-FROM openjdk:8-jdk
-
+#
+# загружаем maven
+#
+FROM maven:3.6.3-jdk-8 as build
+#
+# устанавливаем каталог с приложением
+#
 ENV PROJECT_DIR=/app
-
 RUN mkdir -p $PROJECT_DIR
-
 WORKDIR $PROJECT_DIR
-
-COPY /authentication/target/authentication-2.2.1.RELEASE.jar   $PROJECT_DIR/authentication.jar
-
+#
+# копируем приложение в образ 
+#
+COPY /authentication $PROJECT_DIR
+#
+# собираем приложение
+#
+RUN mvn -DstkipTests=true clean package
+#
+# заргужаем производственный образ
+#
+FROM openjdk:8-jdk
+#
+# загружаем приложение
+#
+ENV PROJECT_DIR=/app
+RUN mkdir -p $PROJECT_DIR
+WORKDIR $PROJECT_DIR
+COPY --from=build /app/target/authentication-2.2.1.RELEASE.jar   $PROJECT_DIR/authentication.jar
 COPY wait_it.sh $PROJECT_DIR/wait_it.sh
 
 RUN chmod 777 ./wait_it.sh
-
-#CMD [ "java", "-jar", "authentication.jar"]

@@ -1,15 +1,30 @@
-FROM openjdk:8-jdk
-
+#
+# загружаем maven
+#
+FROM maven:3.6.3-jdk-8 as build
+#
+# устанавливаем каталог с приложением
+#
 ENV PROJECT_DIR=/app
-
 RUN mkdir -p $PROJECT_DIR
-
 WORKDIR $PROJECT_DIR
+#
+# копируем приложение в образ 
+#
+COPY /websocket $PROJECT_DIR
+#
+# собираем приложение
+#
+RUN mvn -DstkipTests=true clean package
 
-COPY /websocket/target/websocket-2.2.1.RELEASE.jar $PROJECT_DIR/websocket.jar
-
+#
+# заргужаем производственный образ
+#
+FROM openjdk:8-jdk
+ENV PROJECT_DIR=/app
+RUN mkdir -p $PROJECT_DIR
+WORKDIR $PROJECT_DIR
+COPY --from=build /app/target/websocket-2.2.1.RELEASE.jar $PROJECT_DIR/websocket.jar
 COPY wait_it.sh $PROJECT_DIR/wait_it.sh
 
 RUN chmod 777 ./wait_it.sh
-
-#CMD [ "java", "-jar", "websocket.jar"]
